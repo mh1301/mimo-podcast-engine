@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiMo Podcast Engine - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 {
+            color: #58a6ff;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .header .status {
+            color: #3fb950;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+        }
+        .card h2 {
+            color: #f0f6fc;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #30363d;
+        }
+        .agent-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .agent-row:last-child { border-bottom: none; }
+        .agent-name { font-weight: 500; color: #c9d1d9; }
+        .badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-idle { background: #1f2937; color: #9ca3af; }
+        .badge-running { background: #1e3a5f; color: #58a6ff; }
+        .badge-completed { background: #1a3a2a; color: #3fb950; }
+        .badge-failed { background: #3a1a1a; color: #f85149; }
+        .pipeline-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .pipeline-container h2 {
+            color: #f0f6fc;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+        .pipeline-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+        .pipeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .pipeline-step.active {
+            border-color: #58a6ff;
+            background: #161b22;
+            box-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
+        }
+        .pipeline-step.done {
+            border-color: #3fb950;
+        }
+        .pipeline-step .step-name {
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 4px;
+        }
+        .pipeline-step .step-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .pipeline-arrow {
+            color: #30363d;
+            font-size: 18px;
+        }
+        .episode-list {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+        }
+        .episode-list h2 {
+            color: #f0f6fc;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .episode-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #21262d;
+        }
+        .episode-row:last-child { border-bottom: none; }
+        .episode-id { color: #58a6ff; font-weight: 500; }
+        .episode-topic { color: #8b949e; font-size: 14px; }
+        .controls {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            background: #21262d;
+            color: #c9d1d9;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #30363d; }
+        .btn-primary {
+            background: #238636;
+            border-color: #2ea043;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #2ea043; }
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f0f6fc;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #8b949e;
+            text-transform: uppercase;
+        }
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .metric-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+        }
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px 20px;
+            display: none;
+            color: #3fb950;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MiMo Podcast Production Engine</h1>
+        <span class="status" id="kernel-status">Connecting...</span>
+    </div>
+
+    <div class="container">
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-value" id="metric-agents">0</div>
+                <div class="metric-label">Agents</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-pipelines">0</div>
+                <div class="metric-label">Pipelines</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-episodes">0</div>
+                <div class="metric-label">Episodes</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="metric-uptime">0s</div>
+                <div class="metric-label">Uptime</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshStatus()">Refresh Status</button>
+            <button class="btn" onclick="runPipeline()">Run Pipeline</button>
+        </div>
+
+        <div class="pipeline-container">
+            <h2>Pipeline Progress</h2>
+            <div class="pipeline-flow" id="pipeline-flow">
+                <div class="pipeline-step" id="step-topic_scout">
+                    <span class="step-icon">[T]</span>
+                    <span class="step-name">Topic Scout</span>
+                </div>
+                <span class="pipeline-arrow">&gt;</span>
+                <div class="pipeline-step" id="step-guest_agent">
+                    <span class="step-icon">[G]</span>
+                    <span class="step-name">Guest</span>
+                </div>
+                <span class="pipeline-arrow">&gt;</span>
+                <div class="pipeline-step" id="step-script_agent">
+                    <span class="step-icon">[S]</span>
+                    <span class="step-name">Script</span>
+                </div>
+                <span class="pipeline-arrow">&gt;</span>
+                <div class="pipeline-step" id="step-audio_agent">
+                    <span class="step-icon">[A]</span>
+                    <span class="step-name">Audio</span>
+                </div>
+                <span class="pipeline-arrow">&gt;</span>
+                <div class="pipeline-step" id="step-clip_agent">
+                    <span class="step-icon">[C]</span>
+                    <span class="step-name">Clip</span>
+                </div>
+                <span class="pipeline-arrow">&gt;</span>
+                <div class="pipeline-step" id="step-show_note_agent">
+                    <span class="step-icon">[N]</span>
+                    <span class="step-name">Show Notes</span>
+                </div>
+                <span class="pipeline-arrow">&gt;</span>
+                <div class="pipeline-step" id="step-growth_agent">
+                    <span class="step-icon">[W]</span>
+                    <span class="step-name">Growth</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Agent Status</h2>
+                <div id="agent-list">
+                    <div class="agent-row"><span class="agent-name">Loading...</span></div>
+                </div>
+            </div>
+            <div class="episode-list">
+                <h2>Episode Tracker</h2>
+                <div id="episode-list">
+                    <div class="episode-row"><span class="episode-topic">No episodes yet</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        const API_BASE = '/api/v1/podcast';
+        const startTime = Date.now();
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+
+        function formatUptime() {
+            const s = Math.floor((Date.now() - startTime) / 1000);
+            if (s < 60) return s + 's';
+            if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+            return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+        }
+
+        async function refreshStatus() {
+            try {
+                const res = await fetch(API_BASE + '/status');
+                const data = await res.json();
+
+                document.getElementById('kernel-status').textContent =
+                    data.initialized ? 'Kernel Active' : 'Initializing...';
+                document.getElementById('metric-agents').textContent = data.agent_count;
+                document.getElementById('metric-pipelines').textContent = data.pipeline_count;
+
+                const listEl = document.getElementById('agent-list');
+                listEl.innerHTML = '';
+                (data.agents || []).forEach(a => {
+                    const div = document.createElement('div');
+                    div.className = 'agent-row';
+                    div.innerHTML = `
+                        <span class="agent-name">${a.name}</span>
+                        <span class="badge badge-${a.status}">${a.status}</span>
+                    `;
+                    listEl.appendChild(div);
+                });
+
+                showToast('Status refreshed');
+            } catch (e) {
+                document.getElementById('kernel-status').textContent = 'Connection Error';
+            }
+        }
+
+        async function loadEpisodes() {
+            try {
+                const res = await fetch(API_BASE + '/episodes');
+                const data = await res.json();
+                document.getElementById('metric-episodes').textContent = data.episodes.length;
+
+                const listEl = document.getElementById('episode-list');
+                listEl.innerHTML = '';
+                if (data.episodes.length === 0) {
+                    listEl.innerHTML = '<div class="episode-row"><span class="episode-topic">No episodes yet</span></div>';
+                    return;
+                }
+                data.episodes.forEach(ep => {
+                    const div = document.createElement('div');
+                    div.className = 'episode-row';
+                    div.innerHTML = `
+                        <span class="episode-id">${ep.episode_id}</span>
+                        <span class="episode-topic">${ep.topic || ''}</span>
+                        <span class="badge badge-${ep.status === 'completed' ? 'completed' : 'running'}">${ep.status}</span>
+                    `;
+                    listEl.appendChild(div);
+                });
+            } catch (e) {}
+        }
+
+        async function runPipeline() {
+            const episodeId = 'ep-' + Date.now();
+            try {
+                showToast('Running pipeline...');
+                const res = await fetch(API_BASE + '/pipeline', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({episode_id: episodeId, topic: 'AI and Technology'})
+                });
+                const data = await res.json();
+                showToast('Pipeline ' + data.status + ': ' + episodeId);
+
+                // Animate pipeline steps
+                const agents = data.agents || ['topic_scout','guest_agent','script_agent','audio_agent','clip_agent','show_note_agent','growth_agent'];
+                for (let i = 0; i < agents.length; i++) {
+                    const el = document.getElementById('step-' + agents[i]);
+                    if (el) el.classList.add('active');
+                    if (i > 0) {
+                        const prev = document.getElementById('step-' + agents[i-1]);
+                        if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+                    }
+                    await new Promise(r => setTimeout(r, 300));
+                }
+                const last = document.getElementById('step-' + agents[agents.length-1]);
+                if (last) { last.classList.remove('active'); last.classList.add('done'); }
+
+                refreshStatus();
+                loadEpisodes();
+            } catch (e) {
+                showToast('Pipeline failed: ' + e.message);
+            }
+        }
+
+        // Auto-refresh
+        refreshStatus();
+        loadEpisodes();
+        setInterval(refreshStatus, 10000);
+        setInterval(() => {
+            document.getElementById('metric-uptime').textContent = formatUptime();
+        }, 1000);
+    </script>
+</body>
+</html>
